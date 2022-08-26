@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-var token = "Token here";
+var token = "5494523799:AAHpDGcbaHLidsTy2UNkv9OYM6EjGEEeJOU";
 var botClient = new TelegramBotClient($"{token}");
 using var cts = new CancellationTokenSource();
 // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
@@ -14,11 +14,10 @@ var receiverOptions = new ReceiverOptions
     AllowedUpdates = { } // receive all update types
 };
 botClient.StartReceiving(
-    updateHandler: HandleUpdateAsync,
-    pollingErrorHandler: HandlePollingErrorAsync,
+    HandleUpdatesAsync,
+    HandleErrorAsync,
     receiverOptions,
-    cancellationToken: cts.Token
-);
+    cancellationToken: cts.Token);
 
 var me = await botClient.GetMeAsync();
 
@@ -28,22 +27,18 @@ Console.ReadLine();
 // Send cancellation request to stop bot
 cts.Cancel();
 
-async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+async Task HandleUpdatesAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
-    // Only process Message updates: https://core.telegram.org/bots/api#message
-    if (update.Message is not { } message)
+    if (update.Type == UpdateType.Message && update?.Message?.Text != null)
+    {
+        await HandleMessage(botClient, update.Message);
         return;
-    // Only process text messages
-    if (message.Text is not { } messageText)
-        return;
-    var chatId = message.Chat.Id;
-    Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
+    }
     if(update.Type == UpdateType.CallbackQuery)
     {
         await HandleCallbackQuery(botClient, update.CallbackQuery);
         return;
     }
-
 }
 async Task HandleMessage(ITelegramBotClient botClient,Message message)
 {
@@ -55,13 +50,17 @@ async Task HandleMessage(ITelegramBotClient botClient,Message message)
     {
         ReplyKeyboardMarkup keyboard = new(new[]
         {
-            new KeyboardButton[] { "Hello" },
-            new KeyboardButton[] { "Search"}
+            new KeyboardButton[] { "Hello", "Search"}
         })
         {
             ResizeKeyboard = true
         };    
-        await botClient.SendTextMessageAsync(message.Chat.Id, "Thats right:", replyMarkup: keyboard);
+        await botClient.SendTextMessageAsync(message.Chat.Id, "Choose:", replyMarkup: keyboard);
+        return;
+    }
+    if(message.Text == "Search")
+    {
+        await botClient.SendTextMessageAsync(message.Chat.Id, $"You are done");
         return;
     }
     await botClient.SendTextMessageAsync(message.Chat.Id, $"You said:{message.Text}");
@@ -70,7 +69,7 @@ async Task HandleCallbackQuery(ITelegramBotClient botClient, CallbackQuery callb
 {
 
 }
-Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
     var ErrorMessage = exception switch
     {
@@ -80,5 +79,5 @@ Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, 
     };
 
     Console.WriteLine(ErrorMessage);
-    return Task.CompletedTask;
+    return Task.CompletedTask; 
 }
