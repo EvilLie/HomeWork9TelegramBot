@@ -4,9 +4,10 @@ using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-
-var path = "database.file";
-var token = "your token here";
+//path to file with downloaded files
+var path = "Downloads";
+//your token here
+var token = "5494523799:AAHpDGcbaHLidsTy2UNkv9OYM6EjGEEeJOU";
 var botClient = new TelegramBotClient($"{token}");
 using var cts = new CancellationTokenSource();
 // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
@@ -46,11 +47,19 @@ static async void DownloadFile(ITelegramBotClient botClient, string fileId, stri
 }
 async Task HandleUpdatesAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
-    if (update.Type == UpdateType.Message && update?.Message?.Text != null)
+    if (update.Type == UpdateType.Message)
     {
-        await HandleMessage(botClient, update.Message);
-        return;
-    }
+        if(update?.Message?.Text != null)
+        {
+            await HandleMessage(botClient, update.Message);     
+           
+        }
+        if(update.Message.Type == MessageType.Document && update.Message.Document != null)
+        {
+            DownloadFile(botClient, update.Message.Document.FileId, Path.Combine($"{path}", update.Message.Document.FileName));
+        }    
+         return;
+    } 
     if(update.Type == UpdateType.CallbackQuery)
     {
         await HandleCallbackQuery(botClient, update.CallbackQuery);
@@ -68,7 +77,7 @@ async Task HandleMessage(ITelegramBotClient botClient,Message message)
     {
         ReplyKeyboardMarkup keyboard = new(new[]
         {
-            new KeyboardButton[] { "Hello", "Search"}
+            new KeyboardButton[] { "Send picture", "See downloaded files" }
         })
         {
             ResizeKeyboard = true
@@ -76,9 +85,14 @@ async Task HandleMessage(ITelegramBotClient botClient,Message message)
         await botClient.SendTextMessageAsync(message.Chat.Id, "Choose:", replyMarkup: keyboard);
         return;
     }
-    if(message.Text == "Search")
+    if (message.Text == "Send picture")
     {
-        await botClient.SendTextMessageAsync(message.Chat.Id, $"You are done");
+        await botClient.SendPhotoAsync(message.Chat.Id, "https://github.com/TelegramBots/book/raw/master/src/docs/photo-ara.jpg");
+        return;
+    }
+    if (message.Text == "See downloaded files")
+    {
+        await botClient.SendDocumentAsync(message.Chat.Id, path);
         return;
     }
     await botClient.SendTextMessageAsync(message.Chat.Id, $"You said:{message.Text}");
