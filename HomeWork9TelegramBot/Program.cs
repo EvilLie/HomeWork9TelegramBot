@@ -5,9 +5,9 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 //path to file with downloaded files
-var path = "Downloads";
+var path = "your path to file";
 //your token here
-var token = "5494523799:AAHpDGcbaHLidsTy2UNkv9OYM6EjGEEeJOU";
+var token = "your token here";
 var botClient = new TelegramBotClient($"{token}");
 using var cts = new CancellationTokenSource();
 // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
