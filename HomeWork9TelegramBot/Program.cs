@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 //path to file with downloaded files
-var path = "your path to file";
+var path = "your path";
 //your token here
 var token = "your token here";
 var botClient = new TelegramBotClient($"{token}");
@@ -92,9 +92,13 @@ async Task HandleMessage(ITelegramBotClient botClient,Message message)
     }
     if (message.Text == "See downloaded files")
     {
-        await botClient.SendDocumentAsync(message.Chat.Id, path);
+        foreach(string paths in Directory.GetFiles(path))
+        {
+           await botClient.SendTextMessageAsync(message.Chat.Id, paths);
+        }
         return;
     }
+    
     await botClient.SendTextMessageAsync(message.Chat.Id, $"You said:{message.Text}");
 }
 async Task HandleCallbackQuery(ITelegramBotClient botClient, CallbackQuery callbackQuery)
